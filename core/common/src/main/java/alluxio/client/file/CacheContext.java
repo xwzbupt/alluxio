@@ -24,6 +24,8 @@ import javax.annotation.Nullable;
  * Cache related context.
  */
 public class CacheContext {
+
+  public static final int LAST_MODIFICATION_TIME_NOT_SET = 0;
   /** Used in Prestodb to indicate the cache quota for a file. */
   private CacheQuota mCacheQuota = CacheQuota.UNLIMITED;
   /** Used in Prestodb to indicate the cache scope. */
@@ -35,6 +37,8 @@ public class CacheContext {
    * We don't set Alluxio fileId because in local cache files do not have Alluxio fileId assigned.
    */
   private String mCacheIdentifier = null;
+
+  private long mLastModificationTimeMs = LAST_MODIFICATION_TIME_NOT_SET;
 
   /**
    * @return the default CacheContext
@@ -77,6 +81,13 @@ public class CacheContext {
   }
 
   /**
+   * @return the last modification time of the source data file
+   */
+  public long getLastModificationTimeMs() {
+    return mLastModificationTimeMs;
+  }
+
+  /**
    * @param identifier the id to use
    * @return the updated {@code CacheContext}
    */
@@ -100,6 +111,15 @@ public class CacheContext {
    */
   public CacheContext setCacheScope(CacheScope cacheScope) {
     mCacheScope = cacheScope;
+    return this;
+  }
+
+  /**
+   * @param lastModificationTimeMs the last modification time
+   * @return the updated {@code CacheContext}
+   */
+  public CacheContext setLastModificationTimeMs(long lastModificationTimeMs) {
+    mLastModificationTimeMs = lastModificationTimeMs;
     return this;
   }
 

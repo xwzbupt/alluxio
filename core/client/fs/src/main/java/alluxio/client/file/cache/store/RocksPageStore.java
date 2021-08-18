@@ -97,7 +97,7 @@ public class RocksPageStore implements PageStore {
   }
 
   @Override
-  public void put(PageId pageId, byte[] page) throws IOException {
+  public void put(PageId pageId, byte[] page, PageInfo pageInfo) throws IOException {
     try {
       byte[] key = getKeyFromPageId(pageId);
       mDb.put(key, page);
@@ -107,7 +107,8 @@ public class RocksPageStore implements PageStore {
   }
 
   @Override
-  public int get(PageId pageId, int pageOffset, int bytesToRead, byte[] buffer, int bufferOffset)
+  public int get(PageId pageId, long lastModificationTimeMs, int pageOffset, int bytesToRead,
+      byte[] buffer, int bufferOffset)
       throws IOException, PageNotFoundException {
     Preconditions.checkArgument(pageOffset >= 0, "page offset should be non-negative");
     try {
@@ -143,7 +144,7 @@ public class RocksPageStore implements PageStore {
   }
 
   @Override
-  public void delete(PageId pageId) throws PageNotFoundException {
+  public void delete(PageId pageId, long lastModificationTimeMs) throws PageNotFoundException {
     try {
       byte[] key = getKeyFromPageId(pageId);
       mDb.delete(key);

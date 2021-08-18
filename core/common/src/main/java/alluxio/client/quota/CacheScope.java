@@ -11,7 +11,6 @@
 
 package alluxio.client.quota;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
@@ -153,8 +152,6 @@ public class CacheScope {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("id", mId.substring(0, mLength))
-        .toString();
+    return mId.substring(0, mLength);
   }
 }

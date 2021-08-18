@@ -26,25 +26,25 @@ import javax.annotation.concurrent.ThreadSafe;
 public class PageInfo {
   private final PageId mPageId;
   private final long mPageSize;
-  private final CacheScope mCacheScope;
+  private final FileInfo mFileInfo;
 
   /**
    * @param pageId page id
    * @param pageSize page size in bytes
    */
   public PageInfo(PageId pageId, long pageSize) {
-    this(pageId, pageSize, CacheScope.GLOBAL);
+    this(pageId, pageSize, new FileInfo(CacheScope.GLOBAL, 0));
   }
 
   /**
    * @param pageId page id
    * @param pageSize page size in bytes
-   * @param cacheScope scope of this page
+   * @param fileInfo file info for this page
    */
-  public PageInfo(PageId pageId, long pageSize, CacheScope cacheScope) {
+  public PageInfo(PageId pageId, long pageSize, FileInfo fileInfo) {
     mPageId = pageId;
     mPageSize = pageSize;
-    mCacheScope = cacheScope;
+    mFileInfo = fileInfo;
   }
 
   /**
@@ -62,10 +62,10 @@ public class PageInfo {
   }
 
   /**
-   * @return scope of this page
+   * @return file info of this page
    */
-  public CacheScope getScope() {
-    return mCacheScope;
+  public FileInfo getFileInfo() {
+    return mFileInfo;
   }
 
   @Override
@@ -77,13 +77,12 @@ public class PageInfo {
       return false;
     }
     PageInfo pageInfo = (PageInfo) o;
-    return mPageSize == pageInfo.mPageSize && Objects.equals(mPageId, pageInfo.mPageId)
-        && mCacheScope == pageInfo.mCacheScope;
+    return mPageSize == pageInfo.mPageSize && Objects.equals(mPageId, pageInfo.mPageId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(mPageId, mPageSize, mCacheScope);
+    return Objects.hash(mPageId, mPageSize);
   }
 
   @Override
@@ -91,7 +90,6 @@ public class PageInfo {
     return MoreObjects.toStringHelper(this)
         .add("PageId", mPageId)
         .add("PageSize", mPageSize)
-        .add("Scope", mCacheScope)
         .toString();
   }
 }
