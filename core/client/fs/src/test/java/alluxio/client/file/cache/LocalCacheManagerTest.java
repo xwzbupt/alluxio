@@ -196,6 +196,17 @@ public final class LocalCacheManagerTest {
   }
 
   @Test
+  public void putExistWithNewerTimestamp() throws Exception {
+    CacheContext context = CacheContext.defaults();
+    context.setLastModificationTimeMs(100);
+    assertTrue(mCacheManager.put(PAGE_ID1, PAGE1, context));
+    context.setLastModificationTimeMs(200);
+    assertTrue(mCacheManager.put(PAGE_ID1, PAGE2, context));
+    assertEquals(PAGE2.length, mCacheManager.get(PAGE_ID1, 0, PAGE2.length, mBuf, 0, context));
+    assertArrayEquals(PAGE2, mBuf);
+  }
+
+  @Test
   public void putEvict() throws Exception {
     mConf.set(PropertyKey.USER_CLIENT_CACHE_SIZE, PAGE_SIZE_BYTES);
     mCacheManager = createLocalCacheManager();
@@ -401,7 +412,9 @@ public final class LocalCacheManagerTest {
 
   @Test
   public void putWithQuotaMoreThanCacheCapacity() throws Exception {
+    int cachePages = 5;
     mConf.set(PropertyKey.USER_CLIENT_CACHE_QUOTA_ENABLED, true);
+    mConf.set(PropertyKey.USER_CLIENT_CACHE_SIZE, PAGE_SIZE_BYTES * cachePages);
     CacheScope partitionCacheScope = CacheScope.create("schema.table.partition");
     CacheScope tableCacheScope = CacheScope.create("schema.table");
     CacheScope schemaCacheScope = CacheScope.create("schema");
@@ -413,19 +426,20 @@ public final class LocalCacheManagerTest {
       mPageStore = PageStore.create(PageStoreOptions.create(mConf));
       mCacheManager = createLocalCacheManager(mConf, mMetaStore, mPageStore);
       CacheQuota quota = new CacheQuota(ImmutableMap.of(cacheScope.level(),
-          (long) CACHE_SIZE_BYTES + 1));
-      int cacheSize = CACHE_SIZE_BYTES / PAGE_SIZE_BYTES;
-      for (int i = 0; i < 2 * cacheSize; i++) {
+          (long) PAGE_SIZE_BYTES * cachePages + 1));
+      for (int i = 0; i < 2 * cachePages; i++) {
         PageId pageId = new PageId("3", i);
         CacheContext context = CacheContext.defaults().setCacheScope(partitionCacheScope)
             .setCacheQuota(quota);
         assertTrue(mCacheManager.put(pageId, page(i, PAGE_SIZE_BYTES), context));
-        if (i >= cacheSize) {
-          PageId id = new PageId("3", i - cacheSize + 1);
+        if (i >= cachePages) {
           assertEquals(
-              0, mCacheManager.get(new PageId("3", i - cacheSize), PAGE_SIZE_BYTES, mBuf, 0));
-          assertEquals(PAGE_SIZE_BYTES, mCacheManager.get(id, PAGE_SIZE_BYTES, mBuf, 0));
-          assertArrayEquals(page(i - cacheSize + 1, PAGE_SIZE_BYTES), mBuf);
+              0, mCacheManager.get(new PageId("3", i - cachePages), PAGE_SIZE_BYTES, mBuf, 0));
+          for (int followingIndex = i - cachePages + 1; followingIndex <= i; followingIndex++) {
+            PageId id = new PageId("3", followingIndex);
+            assertEquals(PAGE_SIZE_BYTES, mCacheManager.get(id, PAGE_SIZE_BYTES, mBuf, 0));
+            assertArrayEquals(page(followingIndex, PAGE_SIZE_BYTES), mBuf);
+          }
         }
       }
     }
@@ -478,6 +492,35 @@ public final class LocalCacheManagerTest {
     mCacheManager.put(PAGE_ID1, PAGE1);
     assertEquals(PAGE_SIZE_BYTES, mCacheManager.get(PAGE_ID1, PAGE1.length, mBuf, 0));
     assertArrayEquals(PAGE1, mBuf);
+  }
+
+  @Test
+  public void getExistStale() throws Exception {
+    CacheContext context = CacheContext.defaults();
+    context.setLastModificationTimeMs(100);
+    mCacheManager.put(PAGE_ID1, PAGE1, context);
+    context.setLastModificationTimeMs(200);
+    assertEquals(0, mCacheManager.get(PAGE_ID1, 0, PAGE1.length, mBuf, 0, context));
+    //test the stale page should be evicted
+    context.setLastModificationTimeMs(100);
+    assertEquals(0, mCacheManager.get(PAGE_ID1, 0, PAGE1.length, mBuf, 0, context));
+  }
+
+  @Test
+  public void getExistInUpdatedFile() throws Exception {
+    CacheContext context = CacheContext.defaults();
+    //page1 and page2 are in the same file
+    context.setLastModificationTimeMs(100);
+    mCacheManager.put(PAGE_ID1, PAGE1, context);
+    //put a newer page2 into cache
+    context.setLastModificationTimeMs(200);
+    PageId pageId2 = new PageId(PAGE_ID1.getFileId(), 2L);
+    mCacheManager.put(pageId2, PAGE2, context);
+    //page1 should be evicted, because we know the file got updated
+    context.setLastModificationTimeMs(100);
+    assertEquals(0, mCacheManager.get(PAGE_ID1, 0, PAGE1.length, mBuf, 0, context));
+    context.setLastModificationTimeMs(100);
+    assertEquals(PAGE2.length, mCacheManager.get(pageId2, 0, PAGE2.length, mBuf, 0, context));
   }
 
   @Test
