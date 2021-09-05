@@ -36,11 +36,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 /**
- * A wrapper class on PageStore with timeout. Note that, this page store will not queue any
- * request.
+ * A wrapper class on PageStore with timeout. Note that, this page store will not queue any request.
  */
 public class TimeBoundPageStore implements PageStore {
-
   private final PageStore mPageStore;
   private final long mTimeoutMs;
   private final TimeLimiter mTimeLimter;
@@ -48,7 +46,7 @@ public class TimeBoundPageStore implements PageStore {
 
   /**
    * @param pageStore page store
-   * @param options   time out in ms
+   * @param options time out in ms
    */
   public TimeBoundPageStore(PageStore pageStore, PageStoreOptions options) {
     mPageStore = Preconditions.checkNotNull(pageStore, "pageStore");
@@ -159,30 +157,22 @@ public class TimeBoundPageStore implements PageStore {
   }
 
   private static final class Metrics {
-
-    /**
-     * Number of timeouts when deleting pages from page store.
-     */
+    /** Number of timeouts when deleting pages from page store. */
     private static final Counter STORE_DELETE_TIMEOUT =
         MetricsSystem.counter(MetricKey.CLIENT_CACHE_STORE_DELETE_TIMEOUT.getName());
-    /**
-     * Number of timeouts when reading pages from page store.
-     */
+    /** Number of timeouts when reading pages from page store. */
     private static final Counter STORE_GET_TIMEOUT =
         MetricsSystem.counter(MetricKey.CLIENT_CACHE_STORE_GET_TIMEOUT.getName());
-    /**
-     * Number of timeouts when writing new pages to page store.
-     */
+    /** Number of timeouts when writing new pages to page store. */
     private static final Counter STORE_PUT_TIMEOUT =
         MetricsSystem.counter(MetricKey.CLIENT_CACHE_STORE_PUT_TIMEOUT.getName());
     /**
-     * Number of rejection of I/O threads on submitting tasks to thread pool, likely due to
-     * unresponsive local file system.
+     * Number of rejection of I/O threads on submitting tasks to thread pool,
+     * likely due to unresponsive local file system.
      **/
     private static final Counter STORE_THREADS_REJECTED =
         MetricsSystem.counter(MetricKey.CLIENT_CACHE_STORE_THREADS_REJECTED.getName());
 
-    private Metrics() {
-    } // prevent instantiation
+    private Metrics() {} // prevent instantiation
   }
 }
